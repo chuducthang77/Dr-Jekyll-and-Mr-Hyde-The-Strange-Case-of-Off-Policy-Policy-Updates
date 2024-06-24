@@ -85,5 +85,5 @@ def run_experiment(config_file):
             pickle.dump(expe, handle, protocol=pickle.HIGHEST_PROTOCOL)
             prt('Experiment saved to ' + pkl_file)
 
-config_file = 'expes/expe-name/' + 'config_name'
+config_file = 'expes/fig-new/' + 'config_chain_sample'
 run_experiment(config_file) 

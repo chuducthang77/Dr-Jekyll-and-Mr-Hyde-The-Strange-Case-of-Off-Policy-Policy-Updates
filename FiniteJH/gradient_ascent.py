@@ -354,6 +354,27 @@ class GradientAscent():
                     theta -= theta.max(axis=1).reshape(self.nb_states,1)
                     # Update the main policy
                     pi = softmax(theta)
+
+                ########### NEW CHANGE #################
+                elif discounting == 'new':
+                    adv_theta = theta - pi @ theta
+                    adv_q = self.R - pi @ self.R
+
+                    mask = adv_theta * adv_q > 0
+                    update = adv_q
+
+                    if mask.any():
+                        taus = (adv_q / adv_theta + 0.1)[mask]
+                        tau = np.amax(taus)
+                        update[mask] = (adv_theta - 1 / tau * adv_q)[mask]
+
+                    theta -= actor_stepsize * pi * update
+                    # For numerical stability, rescale the thetas.
+                    theta -= theta.max(axis=1).reshape(self.nb_states, 1)
+                    # Update the main policy
+                    pi = softmax(theta)
+
+                ########################################
                 else:
                     # Entropy calculation (if used as a regularization)
                     entropy = 0
