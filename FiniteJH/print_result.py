@@ -61,20 +61,21 @@ if existing:
     print(len(result['J\\&H $\\epsilon_t=100/t$, $o_{t}=0.5$']['perf_jekyll']['median']))
     print('---------------------------')
 
-    # plt.plot(result['J\\&H $\\epsilon_t=100/t$, $o_{t}=0.5$']['perf_glob']['mean'],
-    #          label='J\\&H $\\epsilon_t=100/t$, $o_{t}=0.5$')
-    # plt.plot(result['J\\&H $\\epsilon_t=10/\\sqrt{t}$, $o_{t}=0.5$']['perf_glob']['mean'],
-    #          label='J\\&H $\\epsilon_t=10/\\sqrt{t}$, $o_{t}=0.5$')
-    # plt.plot(result['J\\&H $\\epsilon_t=10/\\sqrt{t}$, $o_{t}=10/\\sqrt{t}$']['perf_glob']['mean'],
-    #          label='J\\&H $\\epsilon_t=10/\\sqrt{t}$, $o_{t}=10/\\sqrt{t}$')
-    # plt.plot(result['PG update $\\lambda=0$']['perf_glob']['mean'], label='PG update $\\lambda=0$')
-    # plt.plot(result['PG update $\\lambda=0.01$']['perf_glob']['mean'], label='PG update $\\lambda=0.01$')
-    # plt.plot(result['undiscounted update $\\lambda=0$']['perf_glob']['mean'], label='undiscounted update $\\lambda=0$')
+    plt.plot(result['J\\&H $\\epsilon_t=100/t$, $o_{t}=0.5$']['perf_glob']['mean'],
+             label='J\\&H $\\epsilon_t=100/t$, $o_{t}=0.5$')
+    plt.plot(result['J\\&H $\\epsilon_t=10/\\sqrt{t}$, $o_{t}=0.5$']['perf_glob']['mean'],
+             label='J\\&H $\\epsilon_t=10/\\sqrt{t}$, $o_{t}=0.5$')
+    plt.plot(result['J\\&H $\\epsilon_t=10/\\sqrt{t}$, $o_{t}=10/\\sqrt{t}$']['perf_glob']['mean'],
+             label='J\\&H $\\epsilon_t=10/\\sqrt{t}$, $o_{t}=10/\\sqrt{t}$')
+    plt.plot(result['PG update $\\lambda=0$']['perf_glob']['mean'], label='PG update $\\lambda=0$')
+    plt.plot(result['PG update $\\lambda=0.01$']['perf_glob']['mean'], label='PG update $\\lambda=0.01$')
+    plt.plot(result['undiscounted update $\\lambda=0$']['perf_glob']['mean'], label='undiscounted update $\\lambda=0$')
     plt.plot(result['PG update $\\nu=1$']['perf_glob']['mean'], label='PG update $\\nu=1$')
     plt.plot(result['PG update $\\nu=0.1$']['perf_glob']['mean'], label='PG update $\\nu=0.1$')
     plt.plot(result['PG update $\\nu=0.01$']['perf_glob']['mean'], label='PG update $\\nu=0.01$')
     plt.legend()
     plt.show()
+    plt.savefig('fig2.png')
 else:
     # Load a single result to understand the structure of output
     # result = np.load('./expes/fig-2a/config_chain_sample_64162002.pkl', allow_pickle=True)        # # Print the keys of the training pickle. There are 5 keys cfg, seed, env, p_star, p_rand
@@ -103,16 +104,19 @@ else:
                 else:
                     result[res['cfg']['algos'][i]['name']].append(res['cfg']['algos'][i]['res']['perf_glob'])
 
-                # Calculate the mean of 100 results
+    # Calculate the mean of 100 results
     for key in result.keys():
         result[key] = np.array(result[key])
         result[key] = np.mean(result[key], axis=0)
     print(result)
+
     # Plot the result
     for key in result.keys():
         plt.plot(result[key], label=key)
     plt.legend()
-    plt.show()
-    # Save the result to transfer among machines
+    # plt.show()
+    plt.savefig('fig2_training.png')
+
+    # # Save the result to transfer among machines
     # with open('result.pkl', 'wb') as fp:
     #  pickle.dump(result, fp)
