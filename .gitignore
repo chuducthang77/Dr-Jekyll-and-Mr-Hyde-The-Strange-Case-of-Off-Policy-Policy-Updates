@@ -348,3 +348,10 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+projects/def-szepesva/thangchu/Dr-Jekyll-and-Mr-Hyde-The-Strange-Case-of-Off-Policy-Policy-Updates/FiniteJH/expes/fig_new/first_successful_exp
+projects/def-szepesva/thangchu/Dr-Jekyll-and-Mr-Hyde-The-Strange-Case-of-Off-Policy-Policy-Updates/FiniteJH/expes/fig-2a/first-exp
+projects/def-szepesva/thangchu/Dr-Jekyll-and-Mr-Hyde-The-Strange-Case-of-Off-Policy-Policy-Updates/DeepJH/results/test_score
+projects/def-szepesva/thangchu/Dr-Jekyll-and-Mr-Hyde-The-Strange-Case-of-Off-Policy-Policy-Updates/DeepJH/results/training_epi_sco
+events.out.tfevents.*
+projects/def-szepesva/thangchu/Dr-Jekyll-and-Mr-Hyde-The-Strange-Case-of-Off-Policy-Policy-Updates/DeepJH/results/events.out.tfevents.*

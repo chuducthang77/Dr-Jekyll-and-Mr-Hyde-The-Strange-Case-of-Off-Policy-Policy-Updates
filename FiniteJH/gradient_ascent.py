@@ -305,6 +305,12 @@ class GradientAscent():
                 factor = 1
             elif discounting == 'practice':
                 factor = 1
+            
+            ############### NEW-CHANGE #################
+            if discounting == 'new':
+                factor = self.gamma ** traj_length
+            ############################################
+
             # DEPRECATED (won't be in the paper)
             # elif discounting == 'supercounted':
             #     factor = self.gamma**(-traj_length)
@@ -355,10 +361,10 @@ class GradientAscent():
                     # Update the main policy
                     pi = softmax(theta)
 
-                ########### NEW CHANGE #################
+                ########### NEW-CHANGE #################
                 elif discounting == 'new':
-                    adv_theta = theta - pi @ theta
-                    adv_q = self.R - pi @ self.R
+                    adv_theta = theta - np.sum(pi * theta, axis=1).reshape(-1,1)
+                    adv_q = self.R.reshape(self.nb_states, self.nb_actions) - np.sum(pi * self.R.reshape(self.nb_states, self.nb_actions), axis=1).reshape(-1,1)
 
                     mask = adv_theta * adv_q > 0
                     update = adv_q

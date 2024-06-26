@@ -6,7 +6,7 @@ import pickle
 
 # Input: fig-2a pickle
 # Output: fig-2a graph
-existing = True
+existing = False
 
 if existing:
     # Load the existing pickle file
@@ -74,11 +74,13 @@ if existing:
     plt.plot(result['PG update $\\nu=0.1$']['perf_glob']['mean'], label='PG update $\\nu=0.1$')
     plt.plot(result['PG update $\\nu=0.01$']['perf_glob']['mean'], label='PG update $\\nu=0.01$')
     plt.legend()
-    plt.show()
+    # plt.show() # Only uncomment this on the local machine 
     plt.savefig('fig2.png')
 else:
     # Load a single result to understand the structure of output
-    # result = np.load('./expes/fig-2a/config_chain_sample_64162002.pkl', allow_pickle=True)        # # Print the keys of the training pickle. There are 5 keys cfg, seed, env, p_star, p_rand
+    # path = './expes/fig-2a/config_chain_sample_64162002.pkl'
+    # result = np.load(path , allow_pickle=True)        
+    # # Print the keys of the training pickle. There are 5 keys cfg, seed, env, p_star, p_rand
     # print(result.keys())
     # print('---------------------------')
     # # Print the keys of result cfg. There are many keys (similar to config file)
@@ -92,30 +94,43 @@ else:
     # print(len(result['cfg']['algos'][0]['res']['perf_glob']))
     # # print(result['cfg']['algos'][0]['res']['perf_glob'])
     # print('---------------------------')
-    # Load the training file    # Load all 100 results to calculate the mean
-    dir = './expes/fig-2a/'
-    result = {}
-    for name in os.listdir(dir):
-        if '.pkl' in name:
-            res = np.load(dir + str(name), allow_pickle=True)
-            for i in range(len(res['cfg']['algos'])):
-                if res['cfg']['algos'][i]['name'] not in result:
-                    result[res['cfg']['algos'][i]['name']] = [res['cfg']['algos'][i]['res']['perf_glob']]
-                else:
-                    result[res['cfg']['algos'][i]['name']].append(res['cfg']['algos'][i]['res']['perf_glob'])
 
-    # Calculate the mean of 100 results
-    for key in result.keys():
-        result[key] = np.array(result[key])
-        result[key] = np.mean(result[key], axis=0)
-    print(result)
+    # Load the training file    # Load all 100 results to calculate the mean
+    # dir = './expes/fig_new/first_successful_exp/'
+    # result = {}
+    # for name in os.listdir(dir):
+    #     if '.pkl' in name:
+    #         res = np.load(dir + str(name), allow_pickle=True)
+    #         for i in range(len(res['cfg']['algos'])):
+    #             if res['cfg']['algos'][i]['name'] not in result:
+    #                 result[res['cfg']['algos'][i]['name']] = [res['cfg']['algos'][i]['res']['perf_glob']]
+    #             else:
+    #                 result[res['cfg']['algos'][i]['name']].append(res['cfg']['algos'][i]['res']['perf_glob'])
+
+    # # Calculate the mean of 100 results
+    # for key in result.keys():
+    #     result[key] = np.array(result[key])
+    #     result[key] = np.mean(result[key], axis=0)
+
+    # ONLY FOR THE NEW ALGORITHM
+    # # Replace the wrong key name in the dictionary (Delete this after retrain - )
+    # result['New algo with ucb critic'] = result['PG update $\\nu=0.01$']
+    # del result['PG update $\\nu=0.01$']
+    # result['New algo with sample-replay critic']  = result['J\&H $\epsilon_t=100/t$ $o_{t}=0.5$']
+    # del result['J\&H $\epsilon_t=100/t$ $o_{t}=0.5$']
+    # print(result)
+
+    # Combine different training result
+    result = np.load('result.pkl', allow_pickle=True)
+    # result.update(res)
+    # print(result)
 
     # Plot the result
     for key in result.keys():
         plt.plot(result[key], label=key)
     plt.legend()
-    # plt.show()
-    plt.savefig('fig2_training.png')
+    # plt.show() # Only uncomment this on the local machine
+    plt.savefig('fig2_new.png')
 
     # # Save the result to transfer among machines
     # with open('result.pkl', 'wb') as fp:
