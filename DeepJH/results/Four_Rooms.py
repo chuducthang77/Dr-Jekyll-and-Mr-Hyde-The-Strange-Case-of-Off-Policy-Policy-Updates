@@ -204,7 +204,7 @@ if __name__== '__main__':
 
     if args.agent:
         # AGENTS = [eval(agent)]
-        AGENTS = [JH_Discrete, DDQN, SAC_Discrete]
+        AGENTS = [JH_Discrete, SAC_Discrete]
     else:
         AGENTS = [JH_Discrete, DDQN, SAC_Discrete]
     trainer = Trainer(config, AGENTS)

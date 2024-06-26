@@ -121,7 +121,8 @@ else:
     # print(result)
 
     # Combine different training result
-    result = np.load('result.pkl', allow_pickle=True)
+    result = np.load('expes/fig_new/result.pkl', allow_pickle=True)
+    print(result)
     # result.update(res)
     # print(result)
 
@@ -129,8 +130,8 @@ else:
     for key in result.keys():
         plt.plot(result[key], label=key)
     plt.legend()
-    # plt.show() # Only uncomment this on the local machine
-    plt.savefig('fig2_new.png')
+    plt.show() # Only uncomment this on the local machine
+    # plt.savefig('fig2_new.png')
 
     # # Save the result to transfer among machines
     # with open('result.pkl', 'wb') as fp:
