@@ -162,7 +162,7 @@ class JH_Discrete(Base_Agent):
         from the network and so did not involve any random sampling"""
         if state is None:
             state = self.state
-        state = torch.FloatTensor([state]).to(self.device)
+        state = torch.FloatTensor(np.array([state])).to(self.device)
         if len(state.shape) == 1:
             state = state.unsqueeze(0)
         with torch.no_grad():
