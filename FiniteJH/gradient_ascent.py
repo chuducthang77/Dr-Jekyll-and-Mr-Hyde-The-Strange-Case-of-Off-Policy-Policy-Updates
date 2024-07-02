@@ -265,7 +265,9 @@ class GradientAscent():
                 q = np.dot(d_pi, self.R).reshape(self.nb_states,self.nb_actions)
                 
             # UCB CRITIC UPDATE: similar to the other critic update (used only with Jekyll/Hyde algorithm)
+            ################ NEW-CHANGE ############################
             if discounting == 'jh' or discounting == 'jh2':
+            #########################################################
                 r_ucb = np.sqrt(np.log(nb_trajs+1)/(0.001 + counts[s,a].sum()))
                 if critic_type == 'sarsa':
                     # SARSA critic
@@ -364,13 +366,13 @@ class GradientAscent():
                 ########### NEW-CHANGE #################
                 elif discounting == 'new':
                     adv_theta = theta - np.sum(pi * theta, axis=1).reshape(-1,1)
-                    adv_q = self.R.reshape(self.nb_states, self.nb_actions) - np.sum(pi * self.R.reshape(self.nb_states, self.nb_actions), axis=1).reshape(-1,1)
+                    adv_q = q - np.sum(pi * q, axis=1).reshape(-1,1)
 
                     mask = adv_theta * adv_q > 0
                     update = adv_q
 
                     if mask.any():
-                        taus = (adv_q / adv_theta + 0.1)[mask]
+                        taus = (adv_q / (adv_theta + 0.1))[mask]
                         tau = np.amax(taus)
                         update[mask] = (adv_theta - 1 / tau * adv_q)[mask]
 

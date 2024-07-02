@@ -78,7 +78,7 @@ if existing:
     plt.savefig('fig2.png')
 else:
     # Load a single result to understand the structure of output
-    # path = './expes/fig-2a/config_chain_sample_64162002.pkl'
+    # path = './expes/fig_new/config_chain_sample_731402.pkl'
     # result = np.load(path , allow_pickle=True)        
     # # Print the keys of the training pickle. There are 5 keys cfg, seed, env, p_star, p_rand
     # print(result.keys())
@@ -96,21 +96,21 @@ else:
     # print('---------------------------')
 
     # Load the training file    # Load all 100 results to calculate the mean
-    # dir = './expes/fig_new/first_successful_exp/'
-    # result = {}
-    # for name in os.listdir(dir):
-    #     if '.pkl' in name:
-    #         res = np.load(dir + str(name), allow_pickle=True)
-    #         for i in range(len(res['cfg']['algos'])):
-    #             if res['cfg']['algos'][i]['name'] not in result:
-    #                 result[res['cfg']['algos'][i]['name']] = [res['cfg']['algos'][i]['res']['perf_glob']]
-    #             else:
-    #                 result[res['cfg']['algos'][i]['name']].append(res['cfg']['algos'][i]['res']['perf_glob'])
+    dir = './expes/fig_new/'
+    result = {}
+    for name in os.listdir(dir):
+        if '.pkl' in name:
+            res = np.load(dir + str(name), allow_pickle=True)
+            for i in range(len(res['cfg']['algos'])):
+                if res['cfg']['algos'][i]['name'] not in result:
+                    result[res['cfg']['algos'][i]['name']] = [res['cfg']['algos'][i]['res']['perf_glob']]
+                else:
+                    result[res['cfg']['algos'][i]['name']].append(res['cfg']['algos'][i]['res']['perf_glob'])
 
-    # # Calculate the mean of 100 results
-    # for key in result.keys():
-    #     result[key] = np.array(result[key])
-    #     result[key] = np.mean(result[key], axis=0)
+    # Calculate the mean of 100 results
+    for key in result.keys():
+        result[key] = np.array(result[key])
+        result[key] = np.mean(result[key], axis=0)
 
     # ONLY FOR THE NEW ALGORITHM
     # # Replace the wrong key name in the dictionary (Delete this after retrain - )
@@ -121,7 +121,7 @@ else:
     # print(result)
 
     # Combine different training result
-    result = np.load('expes/fig_new/result.pkl', allow_pickle=True)
+    # result = np.load('expes/fig_new/result.pkl', allow_pickle=True)
     print(result)
     # result.update(res)
     # print(result)
@@ -130,8 +130,8 @@ else:
     for key in result.keys():
         plt.plot(result[key], label=key)
     plt.legend()
-    plt.show() # Only uncomment this on the local machine
-    # plt.savefig('fig2_new.png')
+    # plt.show() # Only uncomment this on the local machine
+    plt.savefig('fig2_new.png')
 
     # # Save the result to transfer among machines
     # with open('result.pkl', 'wb') as fp:

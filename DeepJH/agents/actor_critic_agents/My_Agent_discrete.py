@@ -16,7 +16,7 @@ from torch.optim import Adam
 TRAINING_EPISODES_PER_EVAL_EPISODE = 10
 
 
-class JH_Discrete(Base_Agent):
+class My_Agent_Discrete(Base_Agent):
     """Jekyll and Hyde"""
     agent_name = "my_agent"
 
@@ -49,9 +49,12 @@ class JH_Discrete(Base_Agent):
             self.hyperparameters["Critic"]["buffer_size"], self.hyperparameters["batch_size"], self.config.seed, device=self.device)
         self.jekyll_actor = self.create_NN(
             input_dim=self.state_size, output_dim=self.action_size, key_to_use="Actor")
-        self.jekyll_actor_optimizer = Adam(self.jekyll_actor.parameters(),
-                                           lr=self.hyperparameters["Actor"]["learning_rate"], eps=1e-4)
-
+        
+        ############ NEW-CHANGE ##################
+        # Don't need an optimizer. Update manually
+        # self.jekyll_actor_optimizer = Adam(self.jekyll_actor.parameters(),
+        #                                    lr=self.hyperparameters["Actor"]["learning_rate"], eps=1e-4)
+        ##########################################
         '''
         Explorer. Either Random Network Distillation or count based. Creates intrinsic rewards for Hyde to explore properly
         '''
@@ -222,7 +225,7 @@ class JH_Discrete(Base_Agent):
         self.update_jekyll_critic_parameters(qf1_loss, qf2_loss)
 
         policy_loss = self.calculate_jekyll_actor_loss(state_batch, min_qf)
-        self.update_jekyll_actor_parameters(policy_loss)
+        self.update_jekyll_actor_parameters(policy_loss, state_batch, reward_batch)
 
     def sample_experiences(self):
         h_states, h_actions, h_rewards, h_next_states, h_dones, h_int_learn_batch = self.hyde.memory.sample_with_extra()
@@ -275,10 +278,43 @@ class JH_Discrete(Base_Agent):
         self.soft_update_of_target_network(self.jekyll_critic_local_2, self.jekyll_critic_target_2,
                                            self.hyperparameters["Critic"]["tau"])
 
-    def update_jekyll_actor_parameters(self, actor_loss):
+    def update_jekyll_actor_parameters(self, actor_loss, state_batch, reward_batch):
         """Updates the parameters for the jekyll actor"""
-        self.take_optimisation_step(self.jekyll_actor_optimizer, self.jekyll_actor, actor_loss,
-                                    self.hyperparameters["Actor"]["gradient_clipping_norm"])
+        print('Actor parameter size: ', len(self.jekyll_actor.parameters()))
+        print('reward batch size: ', reward_batch.size())
+        print('state batch size: ', state_batch.size())
+
+        # Calculate the policy
+        _, action_probabilities = self.jekyll_pick_action(state_batch)
+
+        # Retrieve the parameter of the policy (theta)
+        policy_parameter = self.jekyll_actor.parameters()
+
+        # Calculate the advantage function of the policy and the q value
+        adv_policy_parameter = policy_parameter - action_probabilities @ policy_parameter
+        adv_q = reward_batch - action_probabilities @ reward_batch
+
+        # Create a mask for 2 different cases of updating
+        mask = adv_policy_parameter * adv_q > 0
+        update = adv_q
+        if mask.any():
+            taus = (adv_q / adv_policy_parameter + 0.1)[mask]
+            tau = np.amax(taus)
+            update[mask] = (adv_policy_parameter - 1 / tau * adv_q)[mask]
+
+        # Update the actor's parameters
+        counter = 0
+        lr = 0.001
+        for f in self.jekyll_actor.parameters():
+            f.data.add_(update[counter] * lr)
+            counter += 1
+        
+        ################## NEW-CHANGE #####################
+        # Update manually in here
+        # Don't even need to calculate the loss 
+        # self.take_optimisation_step(self.jekyll_actor_optimizer, self.jekyll_actor, actor_loss,
+        #                             self.hyperparameters["Actor"]["gradient_clipping_norm"])
+        ###################################################
 
     def print_summary_of_latest_evaluation_episode(self):
         """Prints a summary of the latest episode"""
