@@ -129,9 +129,9 @@ class GradientAscent():
                 update = adv_q
 
                 if mask.any():
-                    taus = (adv_q / (adv_theta + 0.1))[mask]
-                    tau = np.amax(taus)
-                    update[mask] = (adv_theta - 1 / tau * adv_q)[mask]
+                    taus = (adv_q / adv_theta)[mask]
+                    tau = np.amin(taus)
+                    update[mask] = (1 / tau * adv_q - adv_theta)[mask]
 
                 adv = (update).reshape(nb_sa)
 
