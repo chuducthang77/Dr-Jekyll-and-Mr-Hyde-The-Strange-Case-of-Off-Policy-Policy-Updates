@@ -115,11 +115,16 @@ class GradientAscent():
 
             if parametrization == 'softmax':
                 # True advantage
-                # adv = (q.reshape(self.nb_states, self.nb_actions)-lambada*np.log(pi)-np.sum(q.reshape(self.nb_states, self.nb_actions)*pi, axis=1).reshape(self.nb_states, 1)).reshape(nb_sa)
                 ################## NEW-CHANGE #########################
+                # adv = (q.reshape(self.nb_states, self.nb_actions)-lambada*np.log(pi)-np.sum(q.reshape(self.nb_states, self.nb_actions)*pi, axis=1).reshape(self.nb_states, 1)).reshape(nb_sa)
+                
+                # Calculate the adv_theta
                 adv_theta = theta - np.sum(pi * theta, axis=1).reshape(-1, 1)
-                adv_q = q.reshape(self.nb_states, self.nb_actions) - np.sum(pi * q.reshape(self.nb_states, self.nb_actions), axis=1).reshape(-1, 1)
 
+                # Calculate the adv_q 
+                adv_q = q.reshape(self.nb_states, self.nb_actions) - np.sum(pi * q.reshape(self.nb_states, self.nb_actions), axis=1).reshape(-1, 1)
+                
+                # Calculate the update based on 2 scenarios
                 mask = adv_theta * adv_q > 0
                 update = adv_q
 
