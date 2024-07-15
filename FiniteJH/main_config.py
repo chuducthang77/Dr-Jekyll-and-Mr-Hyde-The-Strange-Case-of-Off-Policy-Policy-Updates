@@ -7,6 +7,7 @@ import gradient_ascent
 import yaml
 import pickle
 from utils import prt
+import os
 
 prt('Start of experiment')
 
@@ -20,7 +21,14 @@ def run_experiment(config_file):
     if cfg['seed'] > 0:
         np.random.seed(cfg['seed'])
 
-    for _ in range(cfg['nb_expes']):
+    for run in range(cfg['nb_expes']):
+        ######################## NEW-CHANGE ########################
+        f = open('./debug{run}.txt'.format(run=run), 'w')
+        f.write('Number of states: {nb_states}\n'.format(nb_states=cfg['nb_states']))
+        f.write('Number of actions: {nb_actions}\n'.format(nb_actions=cfg['nb_actions']))
+        f.write('Info about the experiment: The chain domain is designed to have multiple states where each state has two actions: Action 1 leads to an immediate reward, while action 2 leads to no reward but a better long-term reward. The optimal policy is always choosing action 2.\n')
+        f.write('Run #{run}\n'.format(run=run))
+        ############################################################
         prt(cfg['nb_states'])
         expe = {}
         expe['cfg'] = cfg
@@ -75,15 +83,29 @@ def run_experiment(config_file):
                                                                 offpol_alpha=algo['offpol_alpha'])
         elif cfg['setting'] == 'exact':
             for algo in expe['cfg']['algos']:
+                ######################## NEW-CHANGE ########################
+                ############################################################
                 algo['res'] = {}
-                algo['res']['perf_glob'] = pa.fit_exact(algo['parametrization'], algo['discounting'], algo['actor_stepsize'], 
-                                                        hyde_param=algo['hyde_param'], alpha=algo['alpha'], lambada=algo['lambada']) 
-        
+                ######################## NEW-CHANGE ########################
+                algo['res'][
+                    'perf_glob'], better_action_counter, first_time_difference, first_time_back_to_same = pa.fit_exact(
+                    f, algo['parametrization'], algo['discounting'], algo['actor_stepsize'],
+                    hyde_param=algo['hyde_param'], alpha=algo['alpha'], lambada=algo['lambada'])
+                f.write('Algorithm name: {name}\n'.format(name=algo['name']))
+                f.write('Number of times the advantage are difference: {better_action_counter}\n'.format(better_action_counter=better_action_counter))
+                f.write('The first time the adv functions are different: {first_time_difference}\n'.format(first_time_difference=first_time_difference))
+                f.write('The time the adv functions are same again : {first_time_back_to_same}\n'.format(first_time_back_to_same=first_time_back_to_same))
+                ############################################################
+
         # Store data (serialize)
         pkl_file = config_file + '_' + str(expe['seed']) + '.pkl'
         with open(pkl_file, 'wb') as handle:
             pickle.dump(expe, handle, protocol=pickle.HIGHEST_PROTOCOL)
             prt('Experiment saved to ' + pkl_file)
 
-config_file = 'expes/fig_new_exact/fifth_exp_fix_update/' + 'config_chain_exact'
+        ######################## NEW-CHANGE ########################
+        f.close()
+        ############################################################
+
+config_file = 'expes/fig_new_exact/' + 'config_chain_exact'
 run_experiment(config_file) 

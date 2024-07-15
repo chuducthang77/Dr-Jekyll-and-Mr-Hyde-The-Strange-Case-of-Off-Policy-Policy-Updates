@@ -39,7 +39,7 @@ class GradientAscent():
         # hyde_param is the parameter factor for the probability of selecting Hyde's policy (only used with discounting='jh')
         # alpha is the decaying power of the Hyde policy selection
         # lambada (cannot use lambda ;-)) is the parameter for entropic regularization
-    def fit_exact(self, parametrization, discounting, actor_stepsize, hyde_param = 10, alpha=1, lambada=0):
+    def fit_exact(self, f, parametrization, discounting, actor_stepsize, hyde_param = 10, alpha=1, lambada=0):
         prt("exact " + parametrization + ' ' + discounting)
         
         nb_sa = self.nb_actions*self.nb_states
@@ -53,8 +53,19 @@ class GradientAscent():
         nb_it = 0
         # Performance vector of the main policy
         perf_vect = []
-        
+        ######################## NEW-CHANGE ########################
+        better_action_counter = 0 # Count how many times out of max_nb_it / logging the adv functions are different.
+        logging = 500
+        first_time_difference = 0 # what is the first time the adv functions are different.
+        first_time_back_to_same = 0 # What is the time the adv function are from different to same again.
+        ############################################################
+
         while nb_it < self.max_nb_it:
+            ######################## NEW-CHANGE ########################
+            if nb_it % logging == 0:
+                f.write('Iteration {nb_it}\n'.format(nb_it = nb_it))
+            ############################################################
+
             # Computes the exact distribution of the main policy in the true MDP
             M = np.eye(nb_sa) - self.gamma * np.einsum('ijk,kl->ijkl', self.P, pi).reshape(nb_sa, nb_sa)
             sa_0 = np.zeros(nb_sa)
@@ -116,8 +127,11 @@ class GradientAscent():
             if parametrization == 'softmax':
                 # True advantage
                 ################## NEW-CHANGE #########################
-                # adv = (q.reshape(self.nb_states, self.nb_actions)-lambada*np.log(pi)-np.sum(q.reshape(self.nb_states, self.nb_actions)*pi, axis=1).reshape(self.nb_states, 1)).reshape(nb_sa)
-                
+                adv = (q.reshape(self.nb_states, self.nb_actions)-lambada*np.log(pi)-np.sum(q.reshape(self.nb_states, self.nb_actions)*pi, axis=1).reshape(self.nb_states, 1)).reshape(nb_sa)
+                if nb_it % logging == 0:
+                    f.write('Discounting {discounting} with old adv calculation: {adv}\n'.format(discounting=discounting, adv=np.around(adv, decimals=5).tolist()))
+                    better_action_old_adv_calculation = np.argmax(adv.reshape(self.nb_states, self.nb_actions), axis=1)
+                    f.write('The better action at a given state with old adv calculation: {better_a}\n'.format(better_a = better_action_old_adv_calculation))
                 # Calculate the adv_theta
                 adv_theta = theta - np.sum(pi * theta, axis=1).reshape(-1, 1)
 
@@ -134,7 +148,25 @@ class GradientAscent():
                     update[mask] = (1 / tau * adv_q - adv_theta)[mask]
 
                 adv = (update).reshape(nb_sa)
-
+                if nb_it % logging == 0:
+                    f.write('Discounting {discounting} with new adv calculation: {adv}\n'.format(discounting=discounting, adv=np.around(adv, decimals=5).tolist()))
+                    better_action_new_adv_calculation = np.argmax(adv.reshape(self.nb_states, self.nb_actions), axis=1)
+                    f.write('The better action at a given state with new adv calculation: {better_a}\n'.format(better_a = better_action_new_adv_calculation))
+                    f.write('Which state action follows a new update rule: {mask}\n'.format(mask = mask))
+                    # f.write('Which state action follows a new update rule: {where_mask}\n'.format(where_mask = np.vstack([mask.argmax(axis=0), np.arange(len(mask[0]))]).T[mask.sum(0) > 0]))
+                    # Count how many times the adv functions are different
+                    is_same = np.all(better_action_old_adv_calculation == better_action_new_adv_calculation)
+                    if not is_same:
+                        better_action_counter += 1
+                    f.write('Is better action same for both adv calculation: {is_same}\n'.format(is_same = is_same))
+                    
+                    # What is the first time the adv functions are different
+                    if first_time_difference == 0 and not is_same:
+                        first_time_difference = nb_it
+                        
+                    # What is the time the adv functions are from different back to same
+                    if first_time_difference != 0 and is_same:
+                        first_time_back_to_same = nb_it
                 #######################################################
                 # Gradient (no pi because d_0(s,a) = d_0(s)*pi(a|s))
                 grad = (adv*d_0).reshape(self.nb_states, self.nb_actions)
@@ -156,7 +188,7 @@ class GradientAscent():
         if self.perf_stop < 1:
             return self.max_nb_it
         # Otherwise returns the recording of the performance across time
-        return perf_vect
+        return perf_vect, better_action_counter, first_time_difference, first_time_back_to_same
 
 
     # trains the policy from samples with softmax parametrization
