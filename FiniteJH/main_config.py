@@ -23,11 +23,12 @@ def run_experiment(config_file):
 
     for run in range(cfg['nb_expes']):
         ######################## NEW-CHANGE ########################
-        f = open('./debug{run}.txt'.format(run=run), 'w')
+        f = open('./expes/fig_new_exact/debug{run}.txt'.format(run=run), 'w')
         f.write('Number of states: {nb_states}\n'.format(nb_states=cfg['nb_states']))
         f.write('Number of actions: {nb_actions}\n'.format(nb_actions=cfg['nb_actions']))
         f.write('Info about the experiment: The chain domain is designed to have multiple states where each state has two actions: Action 1 leads to an immediate reward, while action 2 leads to no reward but a better long-term reward. The optimal policy is always choosing action 2.\n')
         f.write('Run #{run}\n'.format(run=run))
+        f.write('-----------------------------------------------------------\n')
         ############################################################
         prt(cfg['nb_states'])
         expe = {}

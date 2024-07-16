@@ -140,16 +140,18 @@ class GradientAscent():
                 
                 # Calculate the update based on 2 scenarios
                 mask = adv_theta * adv_q > 0
-                update = adv_q
+                tau = 2.0
 
                 if mask.any():
                     taus = (adv_q / adv_theta)[mask]
                     tau = np.amin(taus)
-                    update[mask] = (1 / tau * adv_q - adv_theta)[mask]
+
+                update = (1 / tau * adv_q - adv_theta)
 
                 adv = (update).reshape(nb_sa)
                 if nb_it % logging == 0:
                     f.write('Discounting {discounting} with new adv calculation: {adv}\n'.format(discounting=discounting, adv=np.around(adv, decimals=5).tolist()))
+                    f.write('The temperature value is: {tau}\n'.format(tau=tau))
                     better_action_new_adv_calculation = np.argmax(adv.reshape(self.nb_states, self.nb_actions), axis=1)
                     f.write('The better action at a given state with new adv calculation: {better_a}\n'.format(better_a = better_action_new_adv_calculation))
                     f.write('Which state action follows a new update rule: {mask}\n'.format(mask = mask))
