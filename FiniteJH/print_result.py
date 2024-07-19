@@ -96,7 +96,7 @@ else:
     # print('---------------------------')
 
     # Load the training file    # Load all 100 results to calculate the mean
-    dir = './expes/fig_new_exact/'
+    dir = './expes/fig_new_exact/10_exp_check_new/'
     result = {}
     for name in os.listdir(dir):
         if '.pkl' in name:
@@ -131,7 +131,7 @@ else:
         plt.plot(result[key], label=key)
     plt.legend()
     # plt.show() # Only uncomment this on the local machine
-    plt.savefig('fig6_new6.png')
+    plt.savefig('fig6_10_exp_check.png')
 
     # # Save the result to transfer among machines
     # with open('result.pkl', 'wb') as fp:

@@ -39,7 +39,7 @@ class GradientAscent():
         # hyde_param is the parameter factor for the probability of selecting Hyde's policy (only used with discounting='jh')
         # alpha is the decaying power of the Hyde policy selection
         # lambada (cannot use lambda ;-)) is the parameter for entropic regularization
-    def fit_exact(self, f, parametrization, discounting, actor_stepsize, hyde_param = 10, alpha=1, lambada=0):
+    def fit_exact(self, parametrization, discounting, actor_stepsize, hyde_param = 10, alpha=1, lambada=0,  f=None):
         prt("exact " + parametrization + ' ' + discounting)
         
         nb_sa = self.nb_actions*self.nb_states
@@ -47,54 +47,71 @@ class GradientAscent():
         ####### Initializations #######
         # policy parameters
         theta = np.zeros((self.nb_states, self.nb_actions))
+        # theta_old_calculation = np.zeros((self.nb_states, self.nb_actions))
         # main policy (also named Jekyll)
         pi = softmax(theta)
+        # pi_old_calculation = softmax(theta_old_calculation)
         # Number of updates until now
         nb_it = 0
         # Performance vector of the main policy
         perf_vect = []
         ######################## NEW-CHANGE ########################
         better_action_counter = 0 # Count how many times out of max_nb_it / logging the adv functions are different.
-        logging = 500
+        logging = -1
         first_time_difference = 0 # what is the first time the adv functions are different.
         first_time_back_to_same = 0 # What is the time the adv function are from different to same again.
         ############################################################
 
         while nb_it < self.max_nb_it:
             ######################## NEW-CHANGE ########################
-            if nb_it % logging == 0:
+            if nb_it % logging == 0 and logging > 0:
+                f.write('-----------------------------------------------------------\n')
                 f.write('Iteration {nb_it}\n'.format(nb_it = nb_it))
             ############################################################
 
             # Computes the exact distribution of the main policy in the true MDP
             M = np.eye(nb_sa) - self.gamma * np.einsum('ijk,kl->ijkl', self.P, pi).reshape(nb_sa, nb_sa)
+            # M_old_calculation = np.eye(nb_sa) - self.gamma * np.einsum('ijk,kl->ijkl', self.P, pi_old_calculation).reshape(nb_sa, nb_sa)
             sa_0 = np.zeros(nb_sa)
             sa_0[:self.nb_actions] = pi[0]
+            # sa_0_old_calculation  = np.zeros(nb_sa)
+            # sa_0_old_calculation[:self.nb_actions] = pi_old_calculation[0]
             d_pi = np.linalg.inv(M)
+            # d_pi_old_calculation = np.linalg.inv(M_old_calculation)
  
             # ACTOR UPDATE
             if discounting == 'theory':
                 # discounted distribution induced by the main policy
                 d_0 = np.dot(sa_0, d_pi)
+                # d_0_old_calculation = np.dot(sa_0_old_calculation, d_pi_old_calculation)
             if discounting == 'jh':
                 # distribution induced by the main policy
                 d_jekyll = np.dot(sa_0, d_pi) # distribution induite par la politique parametree
+                # d_jekyll_old_calculation = np.dot(sa_0_old_calculation, d_pi_old_calculation)
                 d_jekyll /= d_jekyll.sum() # we normalise to measure exactly the jekyll/hyde ratio
+                # d_jekyll_old_calculation /= d_jekyll_old_calculation.sum()
                 # uniform distribution (does not correspond to any policy)
                 # we normalise to measure exactly the jekyll/hyde ratio, 
                 # -1 because the terminal state is not a state where we take actions.
                 pi_copy = pi.copy()
+                # pi_old_calculation_copy = pi_old_calculation.copy()
                 pi_copy[self.env.final_state] = 0
+                # pi_old_calculation_copy[self.env.final_state] = 0
                 d_hyde = pi_copy.reshape(nb_sa)/(self.nb_states-1)
+                # d_hyde_old_calculation = pi_old_calculation.reshape(nb_sa)/(self.nb_states-1)
                 # ratio of Hyde distribution selection
                 ratio = min(1, hyde_param / (nb_it+1)**alpha)
                 # ratio-weighting of the distribution
                 d_0 = (1-ratio) * d_jekyll + ratio * d_hyde
+                # d_0_old_calculation = (1 - ratio) * d_jekyll_old_calculation + ratio * d_hyde_old_calculation
             elif discounting == 'practice':
                 # undiscounted distribution induced by the main policy
                 M_gamma_less = np.eye(nb_sa) - np.einsum('ijk,kl->ijkl', self.P, pi).reshape(nb_sa, nb_sa)
+                # M_gamma_less_old_calculation = np.eye(nb_sa) - np.einsum('ijk,kl->ijkl', self.P, pi_old_calculation).reshape(nb_sa, nb_sa)
                 d_pi_gamma_less = np.linalg.inv(M_gamma_less)
+                # d_pi_gamma_less_old_calculation = np.linalg.inv(M_gamma_less_old_calculation)
                 d_0 = np.dot(sa_0, d_pi_gamma_less)
+                # d_0_old_calculation = np.dot(sa_0_old_calculation, d_pi_gamma_less_old_calculation)
             # DEPRECATED (won't be in the paper)
             # elif discounting == 'supercounted':
             #     M_cumul = np.eye(nb_sa) - (1/self.gamma) * np.einsum('ijk,kl->ijkl', self.P, pi).reshape(nb_sa, nb_sa)
@@ -113,11 +130,15 @@ class GradientAscent():
 
             # Rescale updates on the same weight
             d_0 /= d_0.sum()
+            # d_0_old_calculation /= d_0_old_calculation.sum()
 
             # True value
             q = np.dot(d_pi, self.R)
+            # q_old_calculation = np.dot(d_pi_old_calculation, self.R)
             # True performance 
-            perf = np.dot(q,sa_0)
+            # perf = np.dot(q,sa_0)
+            # perf_vect.append(perf)
+            perf = np.dot(q, sa_0)
             perf_vect.append(perf)
 
             # Stops if a stopping criterion on performance has been met
@@ -127,57 +148,75 @@ class GradientAscent():
             if parametrization == 'softmax':
                 # True advantage
                 ################## NEW-CHANGE #########################
-                adv = (q.reshape(self.nb_states, self.nb_actions)-lambada*np.log(pi)-np.sum(q.reshape(self.nb_states, self.nb_actions)*pi, axis=1).reshape(self.nb_states, 1)).reshape(nb_sa)
-                if nb_it % logging == 0:
-                    f.write('Discounting {discounting} with old adv calculation: {adv}\n'.format(discounting=discounting, adv=np.around(adv, decimals=5).tolist()))
-                    better_action_old_adv_calculation = np.argmax(adv.reshape(self.nb_states, self.nb_actions), axis=1)
-                    f.write('The better action at a given state with old adv calculation: {better_a}\n'.format(better_a = better_action_old_adv_calculation))
+                # adv_old_calculation = (q_old_calculation.reshape(self.nb_states, self.nb_actions) - lambada * np.log(
+                #     pi_old_calculation) - np.sum(
+                #     q_old_calculation.reshape(self.nb_states, self.nb_actions) * pi_old_calculation, axis=1).reshape(
+                #     self.nb_states, 1)).reshape(nb_sa)
+                # adv = (q.reshape(self.nb_states, self.nb_actions) - lambada * np.log(pi) - np.sum(q.reshape(self.nb_states, self.nb_actions) * pi, axis=1).reshape(self.nb_states, 1)).reshape(nb_sa)
+
+                # if nb_it % logging == 0 and logging > 0:
+                #     f.write('Discounting {discounting} with old adv calculation: {adv}\n'.format(discounting=discounting, adv=np.around(adv_old_calculation, decimals=5).tolist()))
+                #     better_action_old_adv_calculation = np.argmax(adv_old_calculation.reshape(self.nb_states, self.nb_actions), axis=1)
+                #     f.write('The better action at a given state with old adv calculation: {better_a}\n'.format(better_a = better_action_old_adv_calculation))
+                #     f.write('The policy with old adv calculation: {policy}\n'.format(
+                #         policy=pi_old_calculation.reshape(nb_sa)))
+                #     f.write('The q-value with old adv calculation: {q}\n'.format(q=q_old_calculation.reshape(nb_sa)))
                 # Calculate the adv_theta
                 adv_theta = theta - np.sum(pi * theta, axis=1).reshape(-1, 1)
 
-                # Calculate the adv_q 
+                # Calculate the adv_q
                 adv_q = q.reshape(self.nb_states, self.nb_actions) - np.sum(pi * q.reshape(self.nb_states, self.nb_actions), axis=1).reshape(-1, 1)
-                
+
                 # Calculate the update based on 2 scenarios
                 mask = adv_theta * adv_q > 0
-                tau = 2.0
+                tau = np.full((self.nb_states, 1), 2.)
 
                 if mask.any():
-                    taus = (adv_q / adv_theta)[mask]
-                    tau = np.amin(taus)
+                    taus = np.split((adv_q / adv_theta)[mask], np.cumsum(mask.sum(axis=1))[:-1])
+                    for i in range(len(taus)):
+                        if len(taus[i]) != 0:
+                            tau[i] = np.amin(taus[i])
 
+                tau -= (tau / 10)
                 update = (1 / tau * adv_q - adv_theta)
 
                 adv = (update).reshape(nb_sa)
-                if nb_it % logging == 0:
-                    f.write('Discounting {discounting} with new adv calculation: {adv}\n'.format(discounting=discounting, adv=np.around(adv, decimals=5).tolist()))
-                    f.write('The temperature value is: {tau}\n'.format(tau=tau))
-                    better_action_new_adv_calculation = np.argmax(adv.reshape(self.nb_states, self.nb_actions), axis=1)
-                    f.write('The better action at a given state with new adv calculation: {better_a}\n'.format(better_a = better_action_new_adv_calculation))
-                    f.write('Which state action follows a new update rule: {mask}\n'.format(mask = mask))
+                # if nb_it % logging == 0 and logging > 0:
+                #     f.write('Discounting {discounting} with new adv calculation: {adv}\n'.format(discounting=discounting, adv=np.around(adv, decimals=5).tolist()))
+                #     better_action_new_adv_calculation = np.argmax(adv.reshape(self.nb_states, self.nb_actions), axis=1)
+                #     f.write('The better action at a given state with new adv calculation: {better_a}\n'.format(better_a = better_action_new_adv_calculation))
+                #     f.write('The temperature value is: {tau}\n'.format(tau=tau))
+                #     f.write('The policy with new adv calculation: {policy}\n'.format(policy=pi.reshape(nb_sa)))
+                #     f.write('The q-value with new adv calculation: {q}\n'.format(q=q.reshape(nb_sa)))
+                    # f.write('The better action at a given state with new adv calculation: {better_a}\n'.format(better_a = better_action_new_adv_calculation))
+                    # f.write('Which state action follows a new update rule: {mask}\n'.format(mask = mask))
                     # f.write('Which state action follows a new update rule: {where_mask}\n'.format(where_mask = np.vstack([mask.argmax(axis=0), np.arange(len(mask[0]))]).T[mask.sum(0) > 0]))
                     # Count how many times the adv functions are different
-                    is_same = np.all(better_action_old_adv_calculation == better_action_new_adv_calculation)
-                    if not is_same:
-                        better_action_counter += 1
-                    f.write('Is better action same for both adv calculation: {is_same}\n'.format(is_same = is_same))
+                    # is_same = np.all(better_action_old_adv_calculation == better_action_new_adv_calculation)
+                    # if not is_same:
+                    #     better_action_counter += 1
+                    # f.write('Is better action same for both adv calculation: {is_same}\n'.format(is_same = is_same))
                     
                     # What is the first time the adv functions are different
-                    if first_time_difference == 0 and not is_same:
-                        first_time_difference = nb_it
+                    # if first_time_difference == 0 and not is_same:
+                    #     first_time_difference = nb_it
                         
                     # What is the time the adv functions are from different back to same
-                    if first_time_difference != 0 and is_same:
-                        first_time_back_to_same = nb_it
+                    # if first_time_difference != 0 and is_same:
+                        # first_time_back_to_same = nb_it
                 #######################################################
                 # Gradient (no pi because d_0(s,a) = d_0(s)*pi(a|s))
                 grad = (adv*d_0).reshape(self.nb_states, self.nb_actions)
+                # grad_old_calculation = (adv_old_calculation * d_0_old_calculation).reshape(self.nb_states, self.nb_actions)
                 # Update of parameters
                 theta += actor_stepsize*grad
+                # theta_old_calculation += actor_stepsize * grad_old_calculation
                 # For numerical stability, rescale the thetas.
                 theta -= theta.max(axis=1).reshape(self.nb_states,1)
+                # theta_old_calculation -= theta_old_calculation.max(axis=1).reshape(self.nb_states, 1)
                 # Update the main policy
                 pi = softmax(theta)
+                # pi_old_calculation = softmax(theta_old_calculation)
             elif parametrization == 'direct':
                 # Gradient (instead of dividing d_0(s,a) by pi(s,a) which may cause numerical instability, we use d_0(s) = sum_a d_0(s,a))
                 grad = q.reshape(self.nb_states, self.nb_actions)*d_0.reshape(self.nb_states, self.nb_actions).sum(axis=1).reshape(self.nb_states,1)

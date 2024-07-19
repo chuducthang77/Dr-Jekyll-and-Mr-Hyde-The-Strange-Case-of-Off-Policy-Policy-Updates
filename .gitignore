@@ -356,3 +356,4 @@ projects/def-szepesva/thangchu/Dr-Jekyll-and-Mr-Hyde-The-Strange-Case-of-Off-Pol
 events.out.tfevents.*
 projects/def-szepesva/thangchu/Dr-Jekyll-and-Mr-Hyde-The-Strange-Case-of-Off-Policy-Policy-Updates/DeepJH/results/events.out.tfevents.*
 /FiniteJH/expes/fig-2a/full_exp/
+!/FiniteJH/etc/
