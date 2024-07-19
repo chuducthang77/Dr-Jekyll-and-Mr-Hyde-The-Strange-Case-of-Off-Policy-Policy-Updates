@@ -441,6 +441,16 @@ class GradientAscent():
                         if lambada>0:
                             entropy = -lambada*np.log(pi[tau['s']])# Update the parameters
                         theta[tau['s']] += actor_stepsize * factor * pi[tau['s']] * (q[tau['s']]+entropy-np.inner(q[tau['s']],pi[tau['s']]))/minibatch_size
+                        adv_theta = theta[tau['s']] - theta[tau['s']] @ pi[tau['s']]
+                        adv_q = q[tau['s']] - q[tau['s']] @ pi[tau['s']]
+                        mask = adv_theta * adv_q > 0
+                        temperature = 2.
+                        if mask.any():
+                            temperatures = (adv_q / adv_theta)[mask]
+                            temperature = np.amin(temperatures)
+                        temperature -= temperature/10
+                        update = 1 / temperature * adv_q - adv_theta
+                        theta[tau['s']] += actor_stepsize * factor * update / minibatch_size
                         # For numerical stability, rescale the thetas.
                         theta[tau['s']] -= theta[tau['s']].max()
                         # Update the main policy
@@ -451,31 +461,19 @@ class GradientAscent():
                         entropy = -lambada*np.log(pi)# Update the parameters
                     density = (1-p_offpol) * d_pi[0].reshape(self.nb_states,self.nb_actions).sum(axis=1).reshape(self.nb_states,1)/d_pi[0].sum() + p_offpol/self.nb_states
                     theta += actor_stepsize * factor * pi * (q+entropy-np.sum(q*pi, axis=1).reshape(self.nb_states,1)) * density
+
+                    adv_theta = theta - np.sum(theta * pi, axis = 1)
+                    adv_q = q - np.sum(q * pi, axis = 1)
+                    mask = adv_theta * adv_q > 0
+                    temperature = 2.
+
+                    theta += actor_stepsize * factor * pi * adv.reshape(self.nb_states, 1) * density
+
                     # For numerical stability, rescale the thetas.
                     theta -= theta.max(axis=1).reshape(self.nb_states,1)
                     # Update the main policy
                     pi = softmax(theta)
 
-                ########### NEW-CHANGE #################
-                elif discounting == 'new':
-                    adv_theta = theta - np.sum(pi * theta, axis=1).reshape(-1,1)
-                    adv_q = q - np.sum(pi * q, axis=1).reshape(-1,1)
-
-                    mask = adv_theta * adv_q > 0
-                    update = adv_q
-
-                    if mask.any():
-                        taus = (adv_q / (adv_theta + 0.1))[mask]
-                        tau = np.amax(taus)
-                        update[mask] = (adv_theta - 1 / tau * adv_q)[mask]
-
-                    theta -= actor_stepsize * pi * update
-                    # For numerical stability, rescale the thetas.
-                    theta -= theta.max(axis=1).reshape(self.nb_states, 1)
-                    # Update the main policy
-                    pi = softmax(theta)
-
-                ########################################
                 else:
                     # Entropy calculation (if used as a regularization)
                     entropy = 0

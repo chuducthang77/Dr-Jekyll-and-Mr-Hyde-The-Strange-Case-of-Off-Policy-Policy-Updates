@@ -109,5 +109,5 @@ def run_experiment(config_file):
         # f.close()
         ############################################################
 
-config_file = 'expes/fig_new_exact/10_exp_check_new/' + 'config_chain_exact'
+config_file = 'expes/fig_new_sample/' + 'config_chain_sample'
 run_experiment(config_file) 
