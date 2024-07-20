@@ -57,9 +57,10 @@ class GradientAscent():
         perf_vect = []
         ######################## NEW-CHANGE ########################
         better_action_counter = 0 # Count how many times out of max_nb_it / logging the adv functions are different.
-        logging = -1
+        logging = 500
         first_time_difference = 0 # what is the first time the adv functions are different.
         first_time_back_to_same = 0 # What is the time the adv function are from different to same again.
+        temperature_array = np.zeros((self.max_nb_it, self.nb_states))
         ############################################################
 
         while nb_it < self.max_nb_it:
@@ -179,15 +180,16 @@ class GradientAscent():
 
                 tau -= (tau / 10)
                 update = (1 / tau * adv_q - adv_theta)
+                temperature_array[nb_it] = tau.reshape(self.nb_states)
 
                 adv = (update).reshape(nb_sa)
-                # if nb_it % logging == 0 and logging > 0:
+                if nb_it % logging == 0 and logging > 0:
                 #     f.write('Discounting {discounting} with new adv calculation: {adv}\n'.format(discounting=discounting, adv=np.around(adv, decimals=5).tolist()))
                 #     better_action_new_adv_calculation = np.argmax(adv.reshape(self.nb_states, self.nb_actions), axis=1)
                 #     f.write('The better action at a given state with new adv calculation: {better_a}\n'.format(better_a = better_action_new_adv_calculation))
-                #     f.write('The temperature value is: {tau}\n'.format(tau=tau))
-                #     f.write('The policy with new adv calculation: {policy}\n'.format(policy=pi.reshape(nb_sa)))
-                #     f.write('The q-value with new adv calculation: {q}\n'.format(q=q.reshape(nb_sa)))
+                    f.write('The temperature value is: {tau}\n'.format(tau=tau))
+                    f.write('The policy with new adv calculation: {policy}\n'.format(policy=pi.reshape(nb_sa)))
+                    f.write('The q-value with new adv calculation: {q}\n'.format(q=q.reshape(nb_sa)))
                     # f.write('The better action at a given state with new adv calculation: {better_a}\n'.format(better_a = better_action_new_adv_calculation))
                     # f.write('Which state action follows a new update rule: {mask}\n'.format(mask = mask))
                     # f.write('Which state action follows a new update rule: {where_mask}\n'.format(where_mask = np.vstack([mask.argmax(axis=0), np.arange(len(mask[0]))]).T[mask.sum(0) > 0]))
@@ -229,7 +231,7 @@ class GradientAscent():
         if self.perf_stop < 1:
             return self.max_nb_it
         # Otherwise returns the recording of the performance across time
-        return perf_vect, better_action_counter, first_time_difference, first_time_back_to_same
+        return perf_vect, better_action_counter, first_time_difference, first_time_back_to_same, temperature_array
 
 
     # trains the policy from samples with softmax parametrization

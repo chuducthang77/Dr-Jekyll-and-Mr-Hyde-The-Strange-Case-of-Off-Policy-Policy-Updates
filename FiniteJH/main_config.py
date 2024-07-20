@@ -24,12 +24,12 @@ def run_experiment(config_file):
 
     for run in range(cfg['nb_expes']):
         ######################## NEW-CHANGE ########################
-        # f = open('./expes/fig_new_exact/debug{run}.txt'.format(run=run), 'w')
-        # f.write('Number of states: {nb_states}\n'.format(nb_states=cfg['nb_states']))
-        # f.write('Number of actions: {nb_actions}\n'.format(nb_actions=cfg['nb_actions']))
-        # f.write('Info about the experiment: The chain domain is designed to have multiple states where each state has two actions: Action 1 leads to an immediate reward, while action 2 leads to no reward but a better long-term reward. The optimal policy is always choosing action 2.\n')
-        # f.write('Run #{run}\n'.format(run=run))
-        # f.write('-----------------------------------------------------------\n')
+        f = open('./expes/fig_new_exact/13_exp_plot_temperature_average_runs/debug{run}.txt'.format(run=run), 'w')
+        f.write('Number of states: {nb_states}\n'.format(nb_states=cfg['nb_states']))
+        f.write('Number of actions: {nb_actions}\n'.format(nb_actions=cfg['nb_actions']))
+        f.write('Info about the experiment: The chain domain is designed to have multiple states where each state has two actions: Action 1 leads to an immediate reward, while action 2 leads to no reward but a better long-term reward. The optimal policy is always choosing action 2.\n')
+        f.write('Run #{run}\n'.format(run=run))
+        f.write('-----------------------------------------------------------\n')
         ############################################################
         prt(cfg['nb_states'])
         expe = {}
@@ -86,17 +86,17 @@ def run_experiment(config_file):
         elif cfg['setting'] == 'exact':
             for algo in expe['cfg']['algos']:
                 ######################## NEW-CHANGE ########################
+                f.write('Algorithm name: {name}\n'.format(name=algo['name']))
                 ############################################################
                 algo['res'] = {}
                 ######################## NEW-CHANGE ########################
                 algo['res'][
-                    'perf_glob'], better_action_counter, first_time_difference, first_time_back_to_same = pa.fit_exact(
+                    'perf_glob'], better_action_counter, first_time_difference, first_time_back_to_same, algo['res']['temperature'] = pa.fit_exact(
                     algo['parametrization'], algo['discounting'], algo['actor_stepsize'],
-                    hyde_param=algo['hyde_param'], alpha=algo['alpha'], lambada=algo['lambada'])
-                # f.write('Algorithm name: {name}\n'.format(name=algo['name']))
-                # f.write('Number of times the advantage are difference: {better_action_counter}\n'.format(better_action_counter=better_action_counter))
-                # f.write('The first time the adv functions are different: {first_time_difference}\n'.format(first_time_difference=first_time_difference))
-                # f.write('The time the adv functions are same again : {first_time_back_to_same}\n'.format(first_time_back_to_same=first_time_back_to_same))
+                    hyde_param=algo['hyde_param'], alpha=algo['alpha'], lambada=algo['lambada'], f=f)
+                f.write('Number of times the advantage are difference: {better_action_counter}\n'.format(better_action_counter=better_action_counter))
+                f.write('The first time the adv functions are different: {first_time_difference}\n'.format(first_time_difference=first_time_difference))
+                f.write('The time the adv functions are same again : {first_time_back_to_same}\n'.format(first_time_back_to_same=first_time_back_to_same))
                 # ############################################################
 
         # Store data (serialize)
@@ -106,8 +106,8 @@ def run_experiment(config_file):
             prt('Experiment saved to ' + pkl_file)
 
         ######################## NEW-CHANGE ########################
-        # f.close()
+        f.close()
         ############################################################
 
-config_file = 'expes/fig_new_sample/' + 'config_chain_sample'
+config_file = 'expes/fig_new_exact/13_exp_plot_temperature_average_runs/' + 'config_chain_exact'
 run_experiment(config_file) 
